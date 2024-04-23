@@ -110,7 +110,7 @@ func (m *sessionMap) getAndAddSessions() error {
 
 	for _, session := range sessions {
 		m.add(session)
-
+		m.logger.Debugw("Current Session volume", session.Key(), session.GetVolume())
 		if !m.sessionMapped(session) {
 			m.logger.Debugw("Tracking unmapped session", "session", session)
 			m.unmappedSessions = append(m.unmappedSessions, session)
@@ -138,11 +138,14 @@ func (m *sessionMap) setupOnConfigReload() {
 
 func (m *sessionMap) setupOnSliderMove() {
 	sliderEventsChannel := m.deej.serial.SubscribeToSliderMoveEvents()
+	mockInputSliderEventsChannel := m.deej.mockInput.SubscribeToSliderMoveEvents()
 
 	go func() {
 		for {
 			select {
 			case event := <-sliderEventsChannel:
+				m.handleSliderMoveEvent(event)
+			case event := <-mockInputSliderEventsChannel:
 				m.handleSliderMoveEvent(event)
 			}
 		}

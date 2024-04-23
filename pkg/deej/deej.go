@@ -20,11 +20,12 @@ const (
 
 // Deej is the main entity managing access to all sub-components
 type Deej struct {
-	logger   *zap.SugaredLogger
-	notifier Notifier
-	config   *CanonicalConfig
-	serial   *SerialIO
-	sessions *sessionMap
+	logger    *zap.SugaredLogger
+	notifier  Notifier
+	config    *CanonicalConfig
+	serial    *SerialIO
+	mockInput *MockInput
+	sessions  *sessionMap
 
 	stopChannel chan bool
 	version     string
@@ -62,6 +63,14 @@ func NewDeej(logger *zap.SugaredLogger, verbose bool) (*Deej, error) {
 	}
 
 	d.serial = serial
+
+	mockInput, err := NewMockInput(d, logger)
+	if err != nil {
+		logger.Errorw("Failed to create mockInput", "error", err)
+		return nil, fmt.Errorf("create new mockInput: %w", err)
+	}
+
+	d.mockInput = mockInput
 
 	sessionFinder, err := newSessionFinder(logger)
 	if err != nil {
