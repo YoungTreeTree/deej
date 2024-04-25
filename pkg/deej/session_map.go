@@ -250,10 +250,22 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 
 			// iterate all matching sessions and adjust the volume of each one
 			for _, session := range sessions {
-				if session.GetVolume() != event.PercentValue {
-					if err := session.SetVolume(event.PercentValue); err != nil {
-						m.logger.Warnw("Failed to set target session volume", "error", err)
-						adjustmentFailed = true
+				if session.Key() == "master" {
+					if event.PercentValue > 0.5 {
+						if session.GetMute() {
+							session.SetMute(false)
+						}
+					} else {
+						if !session.GetMute() {
+							session.SetMute(true)
+						}
+					}
+				} else {
+					if session.GetVolume() != event.PercentValue {
+						if err := session.SetVolume(event.PercentValue); err != nil {
+							m.logger.Warnw("Failed to set target session volume", "error", err)
+							adjustmentFailed = true
+						}
 					}
 				}
 			}

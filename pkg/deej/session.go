@@ -10,6 +10,8 @@ import (
 type Session interface {
 	GetVolume() float32
 	SetVolume(v float32) error
+	SetMute(t bool) error
+	GetMute() bool
 
 	// TODO: future mute support
 	// GetMute() bool
