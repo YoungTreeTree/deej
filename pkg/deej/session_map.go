@@ -219,6 +219,7 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 
 	// get the targets mapped to this slider from the config
 	targets, ok := m.deej.config.SliderMapping.get(event.SliderID)
+	opMode := m.deej.config.SliderMapping.getMode(event.SliderID)
 
 	// if slider not found in config, silently ignore
 	if !ok {
@@ -250,15 +251,20 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 
 			// iterate all matching sessions and adjust the volume of each one
 			for _, session := range sessions {
-				if session.Key() == "master" {
+				if opMode == sessionOpTyp_mute {
+					var err error
 					if event.PercentValue > 0.5 {
 						if session.GetMute() {
-							session.SetMute(false)
+							err = session.SetMute(false)
 						}
 					} else {
 						if !session.GetMute() {
-							session.SetMute(true)
+							err = session.SetMute(true)
 						}
+					}
+					if err != nil {
+						m.logger.Warnw("Failed to set target session mute", "error", err)
+						adjustmentFailed = true
 					}
 				} else {
 					if session.GetVolume() != event.PercentValue {

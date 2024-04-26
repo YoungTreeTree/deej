@@ -8,19 +8,39 @@ import (
 	"github.com/thoas/go-funk"
 )
 
+type SessionOpTyp string
+
+const (
+	sessionOpTyp_mute   = "mute"
+	sessionOpTyp_volume = "volume"
+)
+
+func SessionOpTypFromString(s string) SessionOpTyp {
+	switch s {
+	case "mute":
+		return sessionOpTyp_mute
+	case "volume":
+		return sessionOpTyp_volume
+	default:
+		return sessionOpTyp_volume
+	}
+}
+
 type sliderMap struct {
 	m    map[int][]string
+	mm   map[int]SessionOpTyp
 	lock sync.Locker
 }
 
 func newSliderMap() *sliderMap {
 	return &sliderMap{
 		m:    make(map[int][]string),
+		mm:   make(map[int]SessionOpTyp),
 		lock: &sync.Mutex{},
 	}
 }
 
-func sliderMapFromConfigs(userMapping map[string][]string, internalMapping map[string][]string) *sliderMap {
+func sliderMapFromConfigs(userMapping map[string][]string, internalMapping map[string][]string, userModeMapping map[string]string) *sliderMap {
 	resultMap := newSliderMap()
 
 	// copy targets from user config, ignoring empty values
@@ -49,6 +69,12 @@ func sliderMapFromConfigs(userMapping map[string][]string, internalMapping map[s
 		resultMap.set(sliderIdx, existingTargets)
 	}
 
+	for sliderIdxString, mode := range userModeMapping {
+		sliderIdx, _ := strconv.Atoi(sliderIdxString)
+
+		resultMap.setMode(sliderIdx, SessionOpTypFromString(mode))
+	}
+
 	return resultMap
 }
 
@@ -74,6 +100,24 @@ func (m *sliderMap) set(key int, value []string) {
 	defer m.lock.Unlock()
 
 	m.m[key] = value
+}
+
+func (m *sliderMap) getMode(key int) SessionOpTyp {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	value, ok := m.mm[key]
+	if !ok {
+		return sessionOpTyp_volume
+	}
+	return value
+}
+
+func (m *sliderMap) setMode(key int, value SessionOpTyp) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	m.mm[key] = value
 }
 
 func (m *sliderMap) String() string {
