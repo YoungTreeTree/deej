@@ -210,7 +210,9 @@ func (m *sessionMap) sessionMapped(session Session) bool {
 }
 
 func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
-
+	go func() {
+		m.deej.ui.input <- event
+	}()
 	// first of all, ensure our session map isn't moldy
 	if m.lastSessionRefresh.Add(maxTimeBetweenSessionRefreshes).Before(time.Now()) {
 		m.logger.Debug("Stale session map detected on slider move, refreshing")

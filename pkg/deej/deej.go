@@ -26,6 +26,7 @@ type Deej struct {
 	serial    *SerialIO
 	mockInput *MockInput
 	sessions  *sessionMap
+	ui        *DeejUi
 
 	stopChannel chan bool
 	version     string
@@ -85,6 +86,9 @@ func NewDeej(logger *zap.SugaredLogger, verbose bool) (*Deej, error) {
 	}
 
 	d.sessions = sessions
+
+	ui := newDeejUi(d)
+	d.ui = ui
 
 	logger.Debug("Created deej instance")
 
@@ -150,6 +154,7 @@ func (d *Deej) run() {
 	// watch the config file for changes
 	go d.config.WatchConfigFileChanges()
 
+	go d.ui.Run()
 	// connect to the arduino for the first time
 	go func() {
 		if err := d.serial.Start(); err != nil {
